@@ -51,12 +51,6 @@ body {
   text-rendering: optimizeLegibility;
 }
 
-/* Better active press feel on buttons */
-button:active, a:active {
-  opacity: 0.75;
-  transform: scale(0.97);
-  transition: opacity 0.08s, transform 0.08s;
-}
 
 /* ===== Custom Scrollbar ===== */
 ::-webkit-scrollbar {

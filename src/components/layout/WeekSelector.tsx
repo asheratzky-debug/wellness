@@ -41,12 +41,12 @@ export default function WeekSelector({
       {/* Right arrow (previous week in RTL) */}
       <button
         onClick={handlePrevWeek}
-        className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors duration-150"
+        className="flex items-center justify-center w-11 h-11 rounded-xl text-gray-500 hover:text-gray-800 hover:bg-gray-100 active:bg-gray-200 transition-colors duration-150"
         aria-label="שבוע קודם"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
-          className="h-5 w-5"
+          className="h-6 w-6"
           viewBox="0 0 20 20"
           fill="currentColor"
         >
@@ -74,12 +74,12 @@ export default function WeekSelector({
       {/* Left arrow (next week in RTL) */}
       <button
         onClick={handleNextWeek}
-        className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors duration-150"
+        className="flex items-center justify-center w-11 h-11 rounded-xl text-gray-500 hover:text-gray-800 hover:bg-gray-100 active:bg-gray-200 transition-colors duration-150"
         aria-label="שבוע הבא"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
-          className="h-5 w-5"
+          className="h-6 w-6"
           viewBox="0 0 20 20"
           fill="currentColor"
         >
