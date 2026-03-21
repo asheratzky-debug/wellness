@@ -145,7 +145,7 @@ export default function SchedulePage() {
 
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <div className="overflow-x-auto" style={{ touchAction: 'pan-x pan-y', WebkitOverflowScrolling: 'touch' }}>
-          <div className="flex gap-2 p-3">
+          <div className="flex gap-2 p-3 min-w-max" style={{ minWidth: '970px' }}>
             {Array.from({ length: 7 }, (_, i) => {
               const dayDate = new Date(weekStart.getTime());
               dayDate.setUTCDate(dayDate.getUTCDate() + i);
