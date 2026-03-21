@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useRef } from 'react';
 import {
   getWeekDateRange,
   formatHebrewDateRange,
@@ -18,6 +18,21 @@ export default function WeekSelector({
   onWeekChange,
 }: WeekSelectorProps) {
   const isCurrentWeek = currentWeekId === getCurrentWeekId();
+  const touchStartX = useRef<number | null>(null);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX.current === null) return;
+    const delta = touchStartX.current - e.changedTouches[0].clientX;
+    if (Math.abs(delta) > 50) {
+      if (delta > 0) handleNextWeek(); // swipe left = next week
+      else handlePrevWeek();           // swipe right = prev week
+    }
+    touchStartX.current = null;
+  };
 
   const displayLabel = useMemo(() => {
     const range = getWeekDateRange(currentWeekId);
@@ -37,7 +52,11 @@ export default function WeekSelector({
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 px-4 py-3 flex items-center justify-between gap-2">
+    <div
+      className="bg-white rounded-xl shadow-sm border border-gray-100 px-4 py-3 flex items-center justify-between gap-2"
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+    >
       {/* Right arrow (previous week in RTL) */}
       <button
         onClick={handlePrevWeek}
