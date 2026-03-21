@@ -20,7 +20,6 @@ export default function ActivityBlock({ activity, activityType, onDelete, onOpen
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.4 : 1,
-    touchAction: 'none',
   };
 
   return (
@@ -40,6 +39,7 @@ export default function ActivityBlock({ activity, activityType, onDelete, onOpen
         <span
           {...attributes}
           {...listeners}
+          style={{ touchAction: 'none' }}
           className="text-gray-200 hover:text-gray-400 cursor-grab active:cursor-grabbing text-sm shrink-0 select-none"
           aria-label="גרור לסידור"
         >
