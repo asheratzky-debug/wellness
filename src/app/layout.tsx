@@ -47,7 +47,7 @@ export default function RootLayout({
         className={`${heebo.variable} font-sans min-h-screen bg-gray-50 antialiased`}
         style={{ fontFamily: "var(--font-heebo), sans-serif" }}
       >
-        <main className="pb-20"><ErrorBoundary>{children}</ErrorBoundary></main>
+        <main className="pb-20" style={{ paddingTop: 'env(safe-area-inset-top)' }}><ErrorBoundary>{children}</ErrorBoundary></main>
         <Navbar />
       </body>
     </html>
