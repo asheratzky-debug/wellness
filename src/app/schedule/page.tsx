@@ -32,17 +32,23 @@ export default function SchedulePage() {
   const [weekData, setWeekData] = useState<WeekData | null>(null);
   const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
 
-  // Auto-advance when returning to app after week change
+  // Reload when returning to app or when activities are updated
   useEffect(() => {
     const handleVisibility = () => {
       if (document.visibilityState === 'visible') {
         const current = getCurrentWeekId();
         setWeekId((prev) => (prev === current ? prev : current));
+        loadData();
       }
     };
+    const handleActivitiesUpdated = () => loadData();
     document.addEventListener('visibilitychange', handleVisibility);
-    return () => document.removeEventListener('visibilitychange', handleVisibility);
-  }, []);
+    window.addEventListener('activitiesUpdated', handleActivitiesUpdated);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibility);
+      window.removeEventListener('activitiesUpdated', handleActivitiesUpdated);
+    };
+  }, [loadData]);
 
   const loadData = useCallback(() => {
     setActivities(getActivities(weekId));

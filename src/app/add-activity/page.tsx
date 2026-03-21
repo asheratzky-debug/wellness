@@ -64,6 +64,7 @@ function AddActivityForm() {
         notes: '',
       });
     }
+    window.dispatchEvent(new Event('activitiesUpdated'));
     router.push('/schedule');
   };
 
