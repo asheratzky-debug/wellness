@@ -138,7 +138,7 @@ export default function SchedulePage() {
       </div>
 
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto" style={{ touchAction: 'pan-x pan-y' }}>
           <div className="flex gap-2 p-3 min-w-max">
             {Array.from({ length: 7 }, (_, i) => {
               const dayDate = new Date(weekStart.getTime());

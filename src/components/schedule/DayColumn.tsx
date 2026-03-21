@@ -75,7 +75,7 @@ export default function DayColumn({
       </div>
 
       {/* Activities */}
-      <div className="flex-1 p-1.5 space-y-1.5 overflow-y-auto">
+      <div className="p-1.5 space-y-1.5">
         <SortableContext items={sorted.map((a) => a.id)} strategy={verticalListSortingStrategy}>
           {sorted.length > 0 ? sorted.map((activity) => {
             const activityType = activityTypeMap.get(activity.typeId);
