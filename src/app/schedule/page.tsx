@@ -32,24 +32,6 @@ export default function SchedulePage() {
   const [weekData, setWeekData] = useState<WeekData | null>(null);
   const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
 
-  // Reload when returning to app or when activities are updated
-  useEffect(() => {
-    const handleVisibility = () => {
-      if (document.visibilityState === 'visible') {
-        const current = getCurrentWeekId();
-        setWeekId((prev) => (prev === current ? prev : current));
-        loadData();
-      }
-    };
-    const handleActivitiesUpdated = () => loadData();
-    document.addEventListener('visibilitychange', handleVisibility);
-    window.addEventListener('activitiesUpdated', handleActivitiesUpdated);
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibility);
-      window.removeEventListener('activitiesUpdated', handleActivitiesUpdated);
-    };
-  }, [loadData]);
-
   const loadData = useCallback(() => {
     setActivities(getActivities(weekId));
     setActivityTypes(getActivityTypes());
@@ -72,6 +54,24 @@ export default function SchedulePage() {
   }, [weekId]);
 
   useEffect(() => { loadData(); }, [loadData]);
+
+  // Reload when returning to app or when activities are updated
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        const current = getCurrentWeekId();
+        setWeekId((prev) => (prev === current ? prev : current));
+        loadData();
+      }
+    };
+    const handleActivitiesUpdated = () => loadData();
+    document.addEventListener('visibilitychange', handleVisibility);
+    window.addEventListener('activitiesUpdated', handleActivitiesUpdated);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibility);
+      window.removeEventListener('activitiesUpdated', handleActivitiesUpdated);
+    };
+  }, [loadData]);
 
   const handleDelete = (id: string) => {
     deleteActivity(id);
