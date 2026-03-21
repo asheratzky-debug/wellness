@@ -55,7 +55,7 @@ export default function DayColumn({
   };
 
   return (
-    <div className={`flex flex-col rounded-xl border transition-colors duration-150 min-w-[130px] flex-1
+    <div className={`flex flex-col rounded-xl border transition-colors duration-150 min-w-[170px] flex-1
       ${today ? 'border-green-300 bg-green-50/40 shadow-sm' : 'border-gray-200 bg-white'}`}>
 
       {/* Header */}

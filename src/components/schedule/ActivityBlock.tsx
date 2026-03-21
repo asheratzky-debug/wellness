@@ -40,7 +40,7 @@ export default function ActivityBlock({ activity, activityType, onDelete, onOpen
           {...attributes}
           {...listeners}
           style={{ touchAction: 'none' }}
-          className="hidden md:block text-gray-200 hover:text-gray-400 cursor-grab active:cursor-grabbing text-sm shrink-0 select-none"
+          className="text-gray-200 hover:text-gray-400 cursor-grab active:cursor-grabbing text-sm shrink-0 select-none"
           aria-label="גרור לסידור"
         >
           ⠿
