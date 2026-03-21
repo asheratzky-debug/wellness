@@ -34,13 +34,13 @@ export default function ActivityBlock({ activity, activityType, onDelete, onOpen
         style={{ backgroundColor: activityType.color }}
       />
 
-      <div className="pr-3 pl-2 py-2.5 flex items-center gap-2">
-        {/* Drag handle */}
+      <div className="pr-3 pl-1 py-2.5 flex items-center gap-1.5">
+        {/* Drag handle — desktop only */}
         <span
           {...attributes}
           {...listeners}
           style={{ touchAction: 'none' }}
-          className="text-gray-200 hover:text-gray-400 cursor-grab active:cursor-grabbing text-sm shrink-0 select-none"
+          className="hidden md:block text-gray-200 hover:text-gray-400 cursor-grab active:cursor-grabbing text-sm shrink-0 select-none"
           aria-label="גרור לסידור"
         >
           ⠿
@@ -50,9 +50,9 @@ export default function ActivityBlock({ activity, activityType, onDelete, onOpen
         <button
           type="button"
           onClick={() => onOpenDetail(activity)}
-          className="flex items-center gap-2 flex-1 min-w-0 text-right"
+          className="flex items-center gap-1.5 flex-1 min-w-0 text-right"
         >
-          <span className="text-xl leading-none shrink-0">{activityType.icon}</span>
+          <span className="text-lg leading-none shrink-0">{activityType.icon}</span>
           <span className="text-xs font-semibold text-gray-800 truncate flex-1">
             {activityType.name}
           </span>
