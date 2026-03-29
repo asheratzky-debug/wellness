@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   DndContext,
   closestCenter,
@@ -144,7 +144,19 @@ export default function SchedulePage() {
       </div>
 
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-        <div className="overflow-x-auto" style={{ touchAction: 'pan-x pan-y', WebkitOverflowScrolling: 'touch' }}>
+        <div
+          className="overflow-x-auto"
+          style={{ touchAction: 'pan-x pan-y', WebkitOverflowScrolling: 'touch' }}
+          ref={(el) => {
+            if (!el) return;
+            const today = new Date().getDay();
+            const isCurrentWeek = weekId === getCurrentWeekId();
+            if (!isCurrentWeek) return;
+            // Each column is ~172px (170 + 2 gap), scroll to today
+            const columnWidth = 172;
+            el.scrollLeft = today * columnWidth - 8;
+          }}
+        >
           <div className="flex gap-2 p-3 min-w-max" style={{ minWidth: '1250px' }}>
             {Array.from({ length: 7 }, (_, i) => {
               const dayDate = new Date(weekStart.getTime());
