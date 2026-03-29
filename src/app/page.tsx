@@ -55,7 +55,7 @@ export default function HomePage() {
     const withProgress: GoalWithProgress[] = goals.flatMap((g) => {
       const actType = typeMap.get(g.typeId);
       if (!actType) return [];
-      const current = allActivities.filter((a) => a.typeId === g.typeId && a.status === 'completed').length;
+      const current = allActivities.filter((a) => a.typeId === g.typeId && a.status !== 'cancelled').length;
       return [{ ...g, current, activityType: actType }];
     });
     setGoalsWithProgress(withProgress);
@@ -96,17 +96,19 @@ export default function HomePage() {
 
       <div className="p-4 space-y-4 max-w-lg mx-auto">
         {/* Daily card */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm px-4 py-3 flex gap-3 items-start">
+        <div className="rounded-2xl border border-green-100 shadow-md px-4 py-3 flex gap-3 items-start"
+          style={{ background: 'linear-gradient(135deg, #f0fdf4 0%, #ffffff 60%)' }}>
           <span className="text-2xl shrink-0 mt-0.5">{dailyCard.emoji}</span>
           <div className="flex-1 min-w-0">
-            <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-300 mb-1">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-green-400 mb-1">
               {dailyCard.type === 'joke' ? 'לצחוק קצת' : dailyCard.type === 'story' ? 'סיפור השראה' : dailyCard.type === 'quote' ? 'ציטוט' : 'מחשבה ליום'}
             </p>
-            <p className="text-sm text-gray-700 leading-relaxed">{dailyCard.text}</p>
+            <p className="text-sm font-medium text-gray-700 leading-relaxed">{dailyCard.text}</p>
             {dailyCard.author && (
               <p className="text-[11px] text-gray-400 mt-1">— {dailyCard.author}</p>
             )}
           </div>
+          <div className="w-1 self-stretch rounded-full bg-green-400 shrink-0 opacity-60" />
         </div>
 
         {/* Sleep */}
