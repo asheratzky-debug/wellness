@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { getHealthData, saveHealthData, generateId } from '@/lib/storage';
 import { getTodayKey } from '@/lib/utils';
+import { enableSleepReminder, isSleepReminderEnabled, disableSleepReminder, registerSW } from '@/lib/notifications';
 import type { DailyHealth } from '@/types';
 
 function getRecentDates(): string[] {
@@ -31,6 +32,27 @@ export default function SleepPage() {
   const [selectedDate, setSelectedDate] = useState(todayKey);
   const [sleepHours, setSleepHours] = useState<number | ''>('');
   const [saved, setSaved] = useState(false);
+  const [reminderEnabled, setReminderEnabled] = useState(false);
+  const [reminderLoading, setReminderLoading] = useState(false);
+
+  useEffect(() => {
+    registerSW();
+    setReminderEnabled(isSleepReminderEnabled());
+  }, []);
+
+  const handleToggleReminder = async () => {
+    setReminderLoading(true);
+    if (reminderEnabled) {
+      disableSleepReminder();
+      setReminderEnabled(false);
+    } else {
+      const result = await enableSleepReminder(9, 0);
+      setReminderEnabled(result === 'granted');
+      if (result === 'denied') alert('יש לאפשר התראות בהגדרות האייפון');
+      if (result === 'unsupported') alert('הדפדפן שלך לא תומך בהתראות');
+    }
+    setReminderLoading(false);
+  };
 
   useEffect(() => {
     const data = getHealthData(selectedDate);
@@ -136,6 +158,20 @@ export default function SleepPage() {
           }`}
         >
           {saved ? '✓ נשמר!' : 'שמור'}
+        </button>
+
+        {/* Daily reminder toggle */}
+        <button
+          type="button"
+          onClick={handleToggleReminder}
+          disabled={reminderLoading}
+          className={`w-full py-3 rounded-2xl font-medium text-sm transition-all border ${
+            reminderEnabled
+              ? 'bg-indigo-50 border-indigo-200 text-indigo-700'
+              : 'bg-gray-50 border-gray-200 text-gray-500'
+          }`}
+        >
+          {reminderLoading ? '...' : reminderEnabled ? '🔔 תזכורת שינה פעילה — 09:00' : '🔔 הפעל תזכורת יומית ב-09:00'}
         </button>
       </form>
     </div>
