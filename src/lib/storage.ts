@@ -1,4 +1,4 @@
-import type { Activity, DailyHealth, ActivityType, WeekData } from '@/types';
+import type { Activity, DailyHealth, ActivityType, WeekData, Goal } from '@/types';
 import { DEFAULT_ACTIVITY_TYPES } from '@/lib/constants';
 
 const KEYS = {
@@ -6,6 +6,7 @@ const KEYS = {
   health: 'wellness-health',
   activityTypes: 'wellness-activity-types',
   weeks: 'wellness-weeks',
+  goals: 'wellness-goals',
 } as const;
 
 function isStorageAvailable(): boolean {
@@ -232,6 +233,29 @@ export function saveWeek(week: WeekData): void {
   if (idx >= 0) validated[idx] = week;
   else validated.push(week);
   write(KEYS.weeks, validated);
+}
+
+// ─── Goals ────────────────────────────────────────────────────────────────────
+
+export function getGoals(): Goal[] {
+  const all = read<unknown[]>(KEYS.goals, []);
+  return all.filter((g): g is Goal => {
+    if (!g || typeof g !== 'object') return false;
+    const obj = g as Record<string, unknown>;
+    return typeof obj.id === 'string' && typeof obj.typeId === 'string' && typeof obj.targetCount === 'number';
+  });
+}
+
+export function saveGoal(goal: Goal): void {
+  const all = getGoals();
+  const idx = all.findIndex((g) => g.id === goal.id);
+  if (idx >= 0) all[idx] = goal;
+  else all.push(goal);
+  write(KEYS.goals, all);
+}
+
+export function deleteGoal(id: string): void {
+  write(KEYS.goals, getGoals().filter((g) => g.id !== id));
 }
 
 // ─── Import / Export ──────────────────────────────────────────────────────────

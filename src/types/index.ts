@@ -54,6 +54,12 @@ export interface Insight {
   priority: number; // higher = more important
 }
 
+export interface Goal {
+  id: string;
+  typeId: string;
+  targetCount: number; // weekly target
+}
+
 export interface WeeklySummary {
   totalTrainingSessions: number;
   totalRecoverySessions: number;

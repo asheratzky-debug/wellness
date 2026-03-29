@@ -2,10 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { getActivities, getActivityTypes, getHealthData } from '@/lib/storage';
+import { getActivities, getActivityTypes, getHealthData, getGoals } from '@/lib/storage';
 import { getCurrentWeekId, getTodayKey } from '@/lib/utils';
 import { DAY_NAMES } from '@/lib/constants';
-import type { Activity, ActivityType } from '@/types';
+import type { Activity, ActivityType, Goal } from '@/types';
+import GoalsSection from '@/components/goals/GoalsSection';
 
 function getGreeting(): string {
   const h = new Date().getHours();
@@ -16,13 +17,20 @@ function getGreeting(): string {
   return 'לילה טוב';
 }
 
+interface GoalWithProgress extends Goal {
+  current: number;
+  activityType: ActivityType;
+}
+
 export default function HomePage() {
   const [todayActivities, setTodayActivities] = useState<Activity[]>([]);
   const [activityTypes, setActivityTypes] = useState<Map<string, ActivityType>>(new Map());
+  const [activityTypesList, setActivityTypesList] = useState<ActivityType[]>([]);
   const [sleepHours, setSleepHours] = useState<number | undefined>(undefined);
   const [weekStats, setWeekStats] = useState({ total: 0, training: 0, recovery: 0 });
+  const [goalsWithProgress, setGoalsWithProgress] = useState<GoalWithProgress[]>([]);
 
-  useEffect(() => {
+  const loadData = () => {
     const weekId = getCurrentWeekId();
     const todayKey = getTodayKey();
     const today = new Date().getDay();
@@ -33,6 +41,7 @@ export default function HomePage() {
 
     setTodayActivities(allActivities.filter((a) => a.dayOfWeek === today));
     setActivityTypes(typeMap);
+    setActivityTypesList(types);
     setSleepHours(getHealthData(todayKey)?.sleepHours);
 
     setWeekStats({
@@ -40,7 +49,18 @@ export default function HomePage() {
       training: allActivities.filter((a) => typeMap.get(a.typeId)?.category === 'training').length,
       recovery: allActivities.filter((a) => typeMap.get(a.typeId)?.category === 'recovery').length,
     });
-  }, []);
+
+    const goals = getGoals();
+    const withProgress: GoalWithProgress[] = goals.flatMap((g) => {
+      const actType = typeMap.get(g.typeId);
+      if (!actType) return [];
+      const current = allActivities.filter((a) => a.typeId === g.typeId && a.status === 'completed').length;
+      return [{ ...g, current, activityType: actType }];
+    });
+    setGoalsWithProgress(withProgress);
+  };
+
+  useEffect(() => { loadData(); }, []);
 
   const todayName = DAY_NAMES[new Date().getDay()];
 
@@ -140,6 +160,13 @@ export default function HomePage() {
             </div>
           )}
         </div>
+
+        {/* Goals */}
+        <GoalsSection
+          goals={goalsWithProgress}
+          activityTypes={activityTypesList}
+          onUpdate={loadData}
+        />
 
         {/* Quick links */}
         <div className="grid grid-cols-2 gap-3">
