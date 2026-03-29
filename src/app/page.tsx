@@ -7,6 +7,7 @@ import { getCurrentWeekId, getTodayKey } from '@/lib/utils';
 import { DAY_NAMES } from '@/lib/constants';
 import type { Activity, ActivityType, Goal } from '@/types';
 import GoalsSection from '@/components/goals/GoalsSection';
+import { getTodayCard } from '@/lib/dailyCard';
 
 function getGreeting(): string {
   const h = new Date().getHours();
@@ -63,6 +64,7 @@ export default function HomePage() {
   useEffect(() => { loadData(); }, []);
 
   const todayName = DAY_NAMES[new Date().getDay()];
+  const dailyCard = getTodayCard();
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -93,6 +95,20 @@ export default function HomePage() {
       </div>
 
       <div className="p-4 space-y-4 max-w-lg mx-auto">
+        {/* Daily card */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm px-4 py-3 flex gap-3 items-start">
+          <span className="text-2xl shrink-0 mt-0.5">{dailyCard.emoji}</span>
+          <div className="flex-1 min-w-0">
+            <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-300 mb-1">
+              {dailyCard.type === 'joke' ? 'לצחוק קצת' : dailyCard.type === 'story' ? 'סיפור השראה' : dailyCard.type === 'quote' ? 'ציטוט' : 'מחשבה ליום'}
+            </p>
+            <p className="text-sm text-gray-700 leading-relaxed">{dailyCard.text}</p>
+            {dailyCard.author && (
+              <p className="text-[11px] text-gray-400 mt-1">— {dailyCard.author}</p>
+            )}
+          </div>
+        </div>
+
         {/* Sleep */}
         {sleepHours !== undefined ? (
           <Link href="/health" className="flex items-center gap-3 bg-indigo-50 border border-indigo-100 rounded-xl p-4">
