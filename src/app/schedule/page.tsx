@@ -67,8 +67,8 @@ export default function SchedulePage() {
       if (!todayEl) return;
       const cRect = container.getBoundingClientRect();
       const eRect = todayEl.getBoundingClientRect();
-      // Shift so today column is 8px from the left edge of the viewport
-      container.scrollLeft += eRect.left - cRect.left - 8;
+      // Center today's column in the viewport
+      container.scrollLeft += eRect.left - cRect.left - (cRect.width - eRect.width) / 2;
     }, 80);
     return () => clearTimeout(timer);
   }, [weekId]);
