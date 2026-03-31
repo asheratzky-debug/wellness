@@ -28,6 +28,7 @@ import type { Activity, ActivityType, WeekData, DayLoad } from '@/types';
 export default function SchedulePage() {
   const [weekId, setWeekId] = useState(getCurrentWeekId);
   const [activities, setActivities] = useState<Activity[]>([]);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [activityTypes, setActivityTypes] = useState<ActivityType[]>([]);
   const [weekData, setWeekData] = useState<WeekData | null>(null);
   const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
@@ -54,6 +55,19 @@ export default function SchedulePage() {
   }, [weekId]);
 
   useEffect(() => { loadData(); }, [loadData]);
+
+  // Scroll to today's column after layout is painted
+  useEffect(() => {
+    if (weekId !== getCurrentWeekId()) return;
+    const el = scrollContainerRef.current;
+    if (!el) return;
+    const raf = requestAnimationFrame(() => {
+      const today = new Date().getDay();
+      const columnWidth = 172;
+      el.scrollLeft = Math.max(0, today * columnWidth - 8);
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [weekId]);
 
   // Reload when returning to app or when activities are updated
   useEffect(() => {
@@ -145,17 +159,9 @@ export default function SchedulePage() {
 
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <div
+          ref={scrollContainerRef}
           className="overflow-x-auto"
           style={{ touchAction: 'pan-x pan-y', WebkitOverflowScrolling: 'touch' }}
-          ref={(el) => {
-            if (!el) return;
-            const today = new Date().getDay();
-            const isCurrentWeek = weekId === getCurrentWeekId();
-            if (!isCurrentWeek) return;
-            // Each column is ~172px (170 + 2 gap), scroll to today
-            const columnWidth = 172;
-            el.scrollLeft = today * columnWidth - 8;
-          }}
         >
           <div className="flex gap-2 p-3 min-w-max" style={{ minWidth: '1250px' }}>
             {Array.from({ length: 7 }, (_, i) => {
