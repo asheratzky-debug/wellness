@@ -56,17 +56,21 @@ export default function SchedulePage() {
 
   useEffect(() => { loadData(); }, [loadData]);
 
-  // Scroll to today's column after layout is painted
+  // Scroll to today's column after layout is painted.
+  // Uses getBoundingClientRect so it works in both LTR and RTL.
   useEffect(() => {
     if (weekId !== getCurrentWeekId()) return;
-    const el = scrollContainerRef.current;
-    if (!el) return;
-    const raf = requestAnimationFrame(() => {
-      const today = new Date().getDay();
-      const columnWidth = 172;
-      el.scrollLeft = Math.max(0, today * columnWidth - 8);
-    });
-    return () => cancelAnimationFrame(raf);
+    const container = scrollContainerRef.current;
+    if (!container) return;
+    const timer = setTimeout(() => {
+      const todayEl = container.querySelector<HTMLElement>('[data-today="true"]');
+      if (!todayEl) return;
+      const cRect = container.getBoundingClientRect();
+      const eRect = todayEl.getBoundingClientRect();
+      // Shift so today column is 8px from the left edge of the viewport
+      container.scrollLeft += eRect.left - cRect.left - 8;
+    }, 80);
+    return () => clearTimeout(timer);
   }, [weekId]);
 
   // Reload when returning to app or when activities are updated
