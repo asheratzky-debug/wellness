@@ -21,17 +21,24 @@ import {
   saveActivity,
   deleteActivity,
   saveWeek,
+  getProfile,
+  getAvatar,
 } from '@/lib/storage';
 import { getCurrentWeekId, getWeekStartDate, formatDateKey } from '@/lib/utils';
 import type { Activity, ActivityType, WeekData, DayLoad } from '@/types';
+import WeekShareCard from '@/components/schedule/WeekShareCard';
 
 export default function SchedulePage() {
   const [weekId, setWeekId] = useState(getCurrentWeekId);
   const [activities, setActivities] = useState<Activity[]>([]);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const exportRef = useRef<HTMLDivElement>(null);
   const [activityTypes, setActivityTypes] = useState<ActivityType[]>([]);
   const [weekData, setWeekData] = useState<WeekData | null>(null);
   const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
+  const [sharing, setSharing] = useState(false);
+  const [userName, setUserName] = useState('');
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
   const loadData = useCallback(() => {
     setActivities(getActivities(weekId));
@@ -55,6 +62,12 @@ export default function SchedulePage() {
   }, [weekId]);
 
   useEffect(() => { loadData(); }, [loadData]);
+
+  useEffect(() => {
+    const p = getProfile();
+    setUserName(p ? `${p.firstName} ${p.lastName}` : '');
+    setAvatarUrl(getAvatar());
+  }, []);
 
   // Scroll to today's column after layout is painted.
   // Uses getBoundingClientRect so it works in both LTR and RTL.
@@ -90,6 +103,41 @@ export default function SchedulePage() {
       window.removeEventListener('activitiesUpdated', handleActivitiesUpdated);
     };
   }, [loadData]);
+
+  const handleShare = async () => {
+    const el = exportRef.current;
+    if (!el || sharing) return;
+    setSharing(true);
+    try {
+      const html2canvas = (await import('html2canvas')).default;
+      const canvas = await html2canvas(el, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: null,
+        logging: false,
+      });
+      const blob = await new Promise<Blob>((resolve, reject) =>
+        canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('blob failed'))), 'image/png'),
+      );
+      const file = new File([blob], `wellness-week.png`, { type: 'image/png' });
+
+      if (navigator.canShare?.({ files: [file] })) {
+        await navigator.share({ files: [file], title: 'הלוח השבועי שלי – Wellness' });
+      } else {
+        // Fallback: download
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `wellness-week.png`;
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+    } catch (err) {
+      if ((err as Error).name !== 'AbortError') console.error(err);
+    } finally {
+      setSharing(false);
+    }
+  };
 
   const handleDelete = (id: string) => {
     deleteActivity(id);
@@ -157,8 +205,33 @@ export default function SchedulePage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Off-screen export card */}
+      <WeekShareCard
+        activities={activities}
+        activityTypes={activityTypes}
+        weekData={weekData}
+        userName={userName}
+        avatarUrl={avatarUrl}
+        exportRef={exportRef}
+      />
+
       <div className="sticky top-0 z-10 bg-white shadow-sm px-3 pt-3 pb-2">
         <WeekSelector currentWeekId={weekId} onWeekChange={setWeekId} />
+        <button
+          type="button"
+          onClick={handleShare}
+          disabled={sharing}
+          className="mt-2 w-full flex items-center justify-center gap-2 py-2 rounded-xl bg-green-50 border border-green-100 text-green-700 text-sm font-semibold hover:bg-green-100 active:bg-green-200 transition-colors disabled:opacity-50"
+        >
+          {sharing ? (
+            <span className="animate-pulse">מייצר תמונה...</span>
+          ) : (
+            <>
+              <span>📤</span>
+              <span>שתף / שמור לוח שבועי</span>
+            </>
+          )}
+        </button>
       </div>
 
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
