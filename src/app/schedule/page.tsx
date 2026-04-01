@@ -26,13 +26,12 @@ import {
 } from '@/lib/storage';
 import { getCurrentWeekId, getWeekStartDate, formatDateKey } from '@/lib/utils';
 import type { Activity, ActivityType, WeekData, DayLoad } from '@/types';
-import WeekShareCard from '@/components/schedule/WeekShareCard';
+import { renderWeekToBlob } from '@/lib/renderWeekImage';
 
 export default function SchedulePage() {
   const [weekId, setWeekId] = useState(getCurrentWeekId);
   const [activities, setActivities] = useState<Activity[]>([]);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const exportRef = useRef<HTMLDivElement>(null);
   const [activityTypes, setActivityTypes] = useState<ActivityType[]>([]);
   const [weekData, setWeekData] = useState<WeekData | null>(null);
   const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
@@ -105,21 +104,10 @@ export default function SchedulePage() {
   }, [loadData]);
 
   const handleShare = async () => {
-    const el = exportRef.current;
-    if (!el || sharing) return;
+    if (sharing) return;
     setSharing(true);
     try {
-      await document.fonts.ready;
-      const html2canvas = (await import('html2canvas')).default;
-      const canvas = await html2canvas(el, {
-        scale: 2,
-        useCORS: true,
-        backgroundColor: null,
-        logging: false,
-      });
-      const blob = await new Promise<Blob>((resolve, reject) =>
-        canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('blob failed'))), 'image/png'),
-      );
+      const blob = await renderWeekToBlob({ activities, activityTypes, weekData, userName, avatarUrl });
       const file = new File([blob], `wellness-week.png`, { type: 'image/png' });
 
       if (navigator.canShare?.({ files: [file] })) {
@@ -206,16 +194,6 @@ export default function SchedulePage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Off-screen export card */}
-      <WeekShareCard
-        activities={activities}
-        activityTypes={activityTypes}
-        weekData={weekData}
-        userName={userName}
-        avatarUrl={avatarUrl}
-        exportRef={exportRef}
-      />
-
       <div className="sticky top-0 z-10 bg-white shadow-sm px-3 pt-3 pb-2">
         <WeekSelector currentWeekId={weekId} onWeekChange={setWeekId} />
         <button
