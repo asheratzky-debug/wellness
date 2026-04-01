@@ -150,7 +150,8 @@ export async function renderWeekToBlob(input: RenderInput): Promise<Blob> {
   const gridTop = PAD + HDR_H + 20;
 
   for (let i = 0; i < 7; i++) {
-    const colX = PAD + i * (COL_W + GAP);
+    // RTL order: ראשון (0) on the right, שבת (6) on the left
+    const colX = PAD + (6 - i) * (COL_W + GAP);
 
     const label  = weekData?.dayLabels[i] ?? null;
     const hdrBg  = label ? LOAD_COLOR[label] : '#22c55e';
