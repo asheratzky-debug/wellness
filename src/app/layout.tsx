@@ -3,6 +3,7 @@ import { Heebo } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/layout/Navbar";
 import ErrorBoundary from "@/components/ErrorBoundary";
+import { Analytics } from "@vercel/analytics/next";
 
 const heebo = Heebo({
   subsets: ["hebrew", "latin"],
@@ -49,6 +50,7 @@ export default function RootLayout({
       >
         <main className="pb-20" style={{ paddingTop: 'env(safe-area-inset-top)' }}><ErrorBoundary>{children}</ErrorBoundary></main>
         <Navbar />
+        <Analytics />
       </body>
     </html>
   );
