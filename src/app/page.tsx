@@ -23,6 +23,16 @@ interface GoalWithProgress extends Goal {
   activityType: ActivityType;
 }
 
+function shouldShowSleepBanner(sleepHours: number | undefined): boolean {
+  if (typeof window === 'undefined') return false;
+  if (localStorage.getItem('sleepReminderEnabled') !== 'true') return false;
+  if (new Date().getHours() < 9) return false;
+  if (sleepHours !== undefined) return false;
+  const dismissed = localStorage.getItem('sleepReminderDismissed');
+  if (dismissed === getTodayKey()) return false;
+  return true;
+}
+
 export default function HomePage() {
   const [todayActivities, setTodayActivities] = useState<Activity[]>([]);
   const [activityTypes, setActivityTypes] = useState<Map<string, ActivityType>>(new Map());
@@ -30,6 +40,7 @@ export default function HomePage() {
   const [sleepHours, setSleepHours] = useState<number | undefined>(undefined);
   const [weekStats, setWeekStats] = useState({ total: 0, training: 0, recovery: 0 });
   const [goalsWithProgress, setGoalsWithProgress] = useState<GoalWithProgress[]>([]);
+  const [showSleepBanner, setShowSleepBanner] = useState(false);
 
   const loadData = () => {
     const weekId = getCurrentWeekId();
@@ -43,7 +54,9 @@ export default function HomePage() {
     setTodayActivities(allActivities.filter((a) => a.dayOfWeek === today));
     setActivityTypes(typeMap);
     setActivityTypesList(types);
-    setSleepHours(getHealthData(todayKey)?.sleepHours);
+    const sleep = getHealthData(todayKey)?.sleepHours;
+    setSleepHours(sleep);
+    setShowSleepBanner(shouldShowSleepBanner(sleep));
 
     setWeekStats({
       total: allActivities.length,
@@ -66,8 +79,32 @@ export default function HomePage() {
   const todayName = DAY_NAMES[new Date().getDay()];
   const dailyCard = getTodayCard();
 
+  const dismissSleepBanner = () => {
+    localStorage.setItem('sleepReminderDismissed', getTodayKey());
+    setShowSleepBanner(false);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Sleep reminder banner */}
+      {showSleepBanner && (
+        <Link
+          href="/health"
+          className="flex items-center gap-3 bg-indigo-500 px-4 py-3 text-white"
+          onClick={dismissSleepBanner}
+        >
+          <span className="text-xl">😴</span>
+          <p className="flex-1 text-sm font-medium">עוד לא תיעדת שינה היום</p>
+          <button
+            type="button"
+            onClick={(e) => { e.preventDefault(); dismissSleepBanner(); }}
+            className="text-indigo-200 hover:text-white text-lg leading-none px-1"
+          >
+            ×
+          </button>
+        </Link>
+      )}
+
       {/* Header */}
       <div className="bg-gradient-to-br from-green-500 to-green-700 px-5 pt-6 pb-8 text-white">
         <p className="text-green-100 text-sm">{getGreeting()} 👋</p>
