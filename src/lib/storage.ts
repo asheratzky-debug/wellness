@@ -1,4 +1,4 @@
-import type { Activity, DailyHealth, ActivityType, WeekData, Goal } from '@/types';
+import type { Activity, DailyHealth, ActivityType, WeekData, Goal, UserProfile } from '@/types';
 import { DEFAULT_ACTIVITY_TYPES } from '@/lib/constants';
 
 const KEYS = {
@@ -7,6 +7,7 @@ const KEYS = {
   activityTypes: 'wellness-activity-types',
   weeks: 'wellness-weeks',
   goals: 'wellness-goals',
+  profile: 'wellness-profile',
 } as const;
 
 function isStorageAvailable(): boolean {
@@ -256,6 +257,26 @@ export function saveGoal(goal: Goal): void {
 
 export function deleteGoal(id: string): void {
   write(KEYS.goals, getGoals().filter((g) => g.id !== id));
+}
+
+// ─── Profile ──────────────────────────────────────────────────────────────────
+
+export function getProfile(): UserProfile | null {
+  const raw = read<unknown>(KEYS.profile, null);
+  if (!raw || typeof raw !== 'object') return null;
+  const p = raw as Record<string, unknown>;
+  if (typeof p.firstName !== 'string' || !p.firstName.trim()) return null;
+  if (typeof p.lastName !== 'string' || !p.lastName.trim()) return null;
+  return {
+    firstName: p.firstName.trim().slice(0, 30),
+    lastName: p.lastName.trim().slice(0, 30),
+    team: typeof p.team === 'string' ? p.team.trim().slice(0, 40) : undefined,
+    position: typeof p.position === 'string' ? p.position.trim().slice(0, 30) : undefined,
+  };
+}
+
+export function saveProfile(profile: UserProfile): void {
+  write(KEYS.profile, profile);
 }
 
 // ─── Import / Export ──────────────────────────────────────────────────────────

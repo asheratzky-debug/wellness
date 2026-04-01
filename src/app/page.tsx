@@ -2,12 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { getActivities, getActivityTypes, getHealthData, getGoals, deleteGoal } from '@/lib/storage';
+import { getActivities, getActivityTypes, getHealthData, getGoals, deleteGoal, getProfile, saveProfile } from '@/lib/storage';
 import { getCurrentWeekId, getTodayKey } from '@/lib/utils';
 import { DAY_NAMES } from '@/lib/constants';
-import type { Activity, ActivityType, Goal } from '@/types';
+import type { Activity, ActivityType, Goal, UserProfile } from '@/types';
 import GoalsSection from '@/components/goals/GoalsSection';
 import { getTodayCard } from '@/lib/dailyCard';
+import ProfileSetup from '@/components/profile/ProfileSetup';
 
 function getGreeting(): string {
   const h = new Date().getHours();
@@ -137,6 +138,8 @@ export default function HomePage() {
   const [goalsWithProgress, setGoalsWithProgress] = useState<GoalWithProgress[]>([]);
   const [showSleepBanner, setShowSleepBanner] = useState(false);
   const [showGoalsReview, setShowGoalsReview] = useState(false);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [showProfileSetup, setShowProfileSetup] = useState(false);
 
   const loadData = () => {
     const weekId = getCurrentWeekId();
@@ -169,12 +172,19 @@ export default function HomePage() {
     });
     setGoalsWithProgress(withProgress);
     setShowGoalsReview(shouldShowGoalsReview(weekId));
+
+    const p = getProfile();
+    setProfile(p);
+    setShowProfileSetup(!p);
   };
 
   useEffect(() => { loadData(); }, []);
 
   const todayName = DAY_NAMES[new Date().getDay()];
   const dailyCard = getTodayCard();
+  const greeting = profile
+    ? `${getGreeting()}, ${profile.firstName} ${profile.lastName} 👋`
+    : `${getGreeting()} 👋`;
 
   const dismissSleepBanner = () => {
     localStorage.setItem('sleepReminderDismissed', getTodayKey());
@@ -190,6 +200,14 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Profile setup — blocks everything until done */}
+      {showProfileSetup && (
+        <ProfileSetup
+          existing={profile}
+          onDone={(p) => { setProfile(p); setShowProfileSetup(false); }}
+        />
+      )}
+
       {/* Weekly goals review modal */}
       {showGoalsReview && goalsWithProgress.length > 0 && (
         <GoalsReviewModal goals={goalsWithProgress} onDone={handleGoalsReviewDone} />
@@ -216,9 +234,25 @@ export default function HomePage() {
 
       {/* Header */}
       <div className="bg-gradient-to-br from-green-500 to-green-700 px-5 pt-6 pb-8 text-white">
-        <p className="text-green-100 text-sm">{getGreeting()} 👋</p>
-        <h1 className="text-2xl font-bold mt-1">Wellness</h1>
-        <p className="text-green-200 text-sm mt-0.5">יום {todayName}</p>
+        <div className="flex items-start justify-between">
+          <div>
+            <p className="text-green-100 text-sm">{greeting}</p>
+            <h1 className="text-2xl font-bold mt-1">Wellness</h1>
+            <p className="text-green-200 text-sm mt-0.5">
+              יום {todayName}
+              {profile?.team && <span className="mx-1.5 opacity-60">·</span>}
+              {profile?.team && <span>{profile.team}</span>}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowProfileSetup(true)}
+            className="w-9 h-9 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-white text-base transition-colors mt-1"
+            aria-label="עריכת פרופיל"
+          >
+            👤
+          </button>
+        </div>
       </div>
 
       {/* Quick stats card */}

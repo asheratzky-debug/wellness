@@ -60,6 +60,13 @@ export interface Goal {
   targetCount: number; // weekly target
 }
 
+export interface UserProfile {
+  firstName: string;
+  lastName: string;
+  team?: string;
+  position?: string;
+}
+
 export interface WeeklySummary {
   totalTrainingSessions: number;
   totalRecoverySessions: number;
