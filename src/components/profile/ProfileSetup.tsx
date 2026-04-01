@@ -9,45 +9,85 @@ interface Props {
   onDone: (profile: UserProfile) => void;
 }
 
+function ToggleGroup<T extends string>({
+  label,
+  options,
+  value,
+  onChange,
+}: {
+  label: string;
+  options: { value: T; label: string; emoji?: string }[];
+  value: T | undefined;
+  onChange: (v: T) => void;
+}) {
+  return (
+    <div>
+      <p className="text-[11px] font-semibold text-gray-400 mb-1.5">{label}</p>
+      <div className="flex gap-2">
+        {options.map((o) => (
+          <button
+            key={o.value}
+            type="button"
+            onClick={() => onChange(o.value)}
+            className={`flex-1 py-2.5 rounded-xl text-sm font-semibold border-2 transition-all ${
+              value === o.value
+                ? 'border-green-400 bg-green-50 text-green-700'
+                : 'border-gray-100 bg-gray-50 text-gray-500'
+            }`}
+          >
+            {o.emoji && <span className="mr-1">{o.emoji}</span>}
+            {o.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function ProfileSetup({ existing, onDone }: Props) {
   const [firstName, setFirstName] = useState(existing?.firstName ?? '');
-  const [lastName, setLastName] = useState(existing?.lastName ?? '');
-  const [team, setTeam] = useState(existing?.team ?? '');
-  const [position, setPosition] = useState(existing?.position ?? '');
+  const [lastName, setLastName]   = useState(existing?.lastName ?? '');
+  const [age, setAge]             = useState<string>(existing?.age?.toString() ?? '');
+  const [gender, setGender]       = useState<UserProfile['gender']>(existing?.gender);
+  const [isPro, setIsPro]         = useState<boolean | undefined>(existing ? existing.isPro : undefined);
+  const [sport, setSport]         = useState(existing?.sport ?? '');
+  const [team, setTeam]           = useState(existing?.team ?? '');
 
-  const isNew = !existing;
+  const isNew   = !existing;
+  const canSave = firstName.trim() && lastName.trim() && isPro !== undefined;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!firstName.trim() || !lastName.trim()) return;
+    if (!canSave) return;
     const profile: UserProfile = {
       firstName: firstName.trim(),
-      lastName: lastName.trim(),
-      team: team.trim() || undefined,
-      position: position.trim() || undefined,
+      lastName:  lastName.trim(),
+      age:       age ? Math.min(120, Math.max(1, parseInt(age))) : undefined,
+      gender,
+      isPro:     isPro!,
+      sport:     isPro && sport.trim() ? sport.trim() : undefined,
+      team:      isPro && team.trim()  ? team.trim()  : undefined,
     };
     saveProfile(profile);
     onDone(profile);
   };
 
   return (
-    <div className="fixed inset-0 z-[90] bg-gradient-to-br from-green-500 to-green-700 flex flex-col items-center justify-center px-6">
-      {/* Logo / title */}
-      <div className="text-center mb-8">
-        <p className="text-5xl mb-3">💪</p>
+    <div className="fixed inset-0 z-[90] bg-gradient-to-br from-green-500 to-green-700 flex flex-col items-center justify-center px-5 overflow-y-auto py-8">
+      {/* Logo */}
+      <div className="text-center mb-6">
+        <p className="text-5xl mb-2">💪</p>
         <h1 className="text-3xl font-extrabold text-white tracking-tight">Wellness</h1>
         <p className="text-green-200 text-sm mt-1">
           {isNew ? 'ברוך הבא! בואו נתחיל' : 'עדכון פרטים אישיים'}
         </p>
       </div>
 
-      {/* Card */}
       <form
         onSubmit={handleSubmit}
-        className="w-full max-w-sm bg-white rounded-3xl shadow-2xl p-6 space-y-4"
+        className="w-full max-w-sm bg-white rounded-3xl shadow-2xl p-6 space-y-5"
       >
-        <p className="text-sm font-bold text-gray-700 mb-1">הפרטים שלך</p>
-
+        {/* Name row */}
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="text-[11px] font-semibold text-gray-400 block mb-1">שם פרטי *</label>
@@ -75,34 +115,78 @@ export default function ProfileSetup({ existing, onDone }: Props) {
           </div>
         </div>
 
+        {/* Age */}
         <div>
-          <label className="text-[11px] font-semibold text-gray-400 block mb-1">קבוצה / מועדון</label>
+          <label className="text-[11px] font-semibold text-gray-400 block mb-1">גיל</label>
           <input
-            type="text"
-            value={team}
-            onChange={(e) => setTeam(e.target.value)}
-            placeholder="מכבי תל אביב (אופציונלי)"
-            maxLength={40}
+            type="number"
+            value={age}
+            onChange={(e) => setAge(e.target.value)}
+            placeholder="25"
+            min={1}
+            max={120}
             className="w-full text-sm border border-gray-200 rounded-xl px-3 py-2.5 focus:outline-none focus:border-green-400 bg-gray-50"
           />
         </div>
 
-        <div>
-          <label className="text-[11px] font-semibold text-gray-400 block mb-1">עמדה / תפקיד</label>
-          <input
-            type="text"
-            value={position}
-            onChange={(e) => setPosition(e.target.value)}
-            placeholder="חלוץ, שוער, מאמן... (אופציונלי)"
-            maxLength={30}
-            className="w-full text-sm border border-gray-200 rounded-xl px-3 py-2.5 focus:outline-none focus:border-green-400 bg-gray-50"
-          />
-        </div>
+        {/* Gender */}
+        <ToggleGroup
+          label="מין"
+          value={gender}
+          onChange={setGender}
+          options={[
+            { value: 'male',   label: 'זכר',  emoji: '👨' },
+            { value: 'female', label: 'נקבה', emoji: '👩' },
+            { value: 'other',  label: 'אחר'              },
+          ]}
+        />
+
+        {/* Divider */}
+        <div className="border-t border-gray-100" />
+
+        {/* Pro athlete */}
+        <ToggleGroup
+          label="ספורטאי מקצועי? *"
+          value={isPro === undefined ? undefined : isPro ? 'yes' : 'no'}
+          onChange={(v) => setIsPro(v === 'yes')}
+          options={[
+            { value: 'yes', label: 'כן 🏅' },
+            { value: 'no',  label: 'לא'    },
+          ]}
+        />
+
+        {/* Pro fields — revealed when isPro = true */}
+        {isPro === true && (
+          <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-200">
+            <div>
+              <label className="text-[11px] font-semibold text-gray-400 block mb-1">ענף ספורט</label>
+              <input
+                type="text"
+                value={sport}
+                onChange={(e) => setSport(e.target.value)}
+                placeholder="כדורגל, כדורסל, אגרוף..."
+                maxLength={30}
+                className="w-full text-sm border border-gray-200 rounded-xl px-3 py-2.5 focus:outline-none focus:border-green-400 bg-gray-50"
+              />
+            </div>
+            <div>
+              <label className="text-[11px] font-semibold text-gray-400 block mb-1">קבוצה / מועדון</label>
+              <input
+                type="text"
+                value={team}
+                onChange={(e) => setTeam(e.target.value)}
+                placeholder="מכבי תל אביב"
+                maxLength={40}
+                className="w-full text-sm border border-gray-200 rounded-xl px-3 py-2.5 focus:outline-none focus:border-green-400 bg-gray-50"
+              />
+            </div>
+          </div>
+        )}
 
         <button
           type="submit"
-          disabled={!firstName.trim() || !lastName.trim()}
-          className="w-full py-3.5 rounded-2xl bg-green-500 hover:bg-green-600 text-white text-sm font-bold disabled:opacity-40 transition-all shadow-sm mt-2"
+          disabled={!canSave}
+          className="w-full py-3.5 rounded-2xl bg-green-500 hover:bg-green-600 text-white text-sm font-bold disabled:opacity-40 transition-all shadow-sm"
         >
           {isNew ? 'בואו נתחיל 🚀' : 'שמור שינויים'}
         </button>

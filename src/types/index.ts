@@ -63,8 +63,11 @@ export interface Goal {
 export interface UserProfile {
   firstName: string;
   lastName: string;
+  age?: number;
+  gender?: 'male' | 'female' | 'other';
+  isPro: boolean;
+  sport?: string;
   team?: string;
-  position?: string;
 }
 
 export interface WeeklySummary {

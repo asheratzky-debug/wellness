@@ -267,11 +267,15 @@ export function getProfile(): UserProfile | null {
   const p = raw as Record<string, unknown>;
   if (typeof p.firstName !== 'string' || !p.firstName.trim()) return null;
   if (typeof p.lastName !== 'string' || !p.lastName.trim()) return null;
+  const validGenders = ['male', 'female', 'other'];
   return {
     firstName: p.firstName.trim().slice(0, 30),
     lastName: p.lastName.trim().slice(0, 30),
+    age: typeof p.age === 'number' && p.age > 0 && p.age < 120 ? Math.round(p.age) : undefined,
+    gender: validGenders.includes(p.gender as string) ? p.gender as UserProfile['gender'] : undefined,
+    isPro: Boolean(p.isPro),
+    sport: typeof p.sport === 'string' ? p.sport.trim().slice(0, 30) : undefined,
     team: typeof p.team === 'string' ? p.team.trim().slice(0, 40) : undefined,
-    position: typeof p.position === 'string' ? p.position.trim().slice(0, 30) : undefined,
   };
 }
 
