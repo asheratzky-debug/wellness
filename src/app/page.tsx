@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { getActivities, getActivityTypes, getHealthData, getGoals } from '@/lib/storage';
+import { getActivities, getActivityTypes, getHealthData, getGoals, deleteGoal } from '@/lib/storage';
 import { getCurrentWeekId, getTodayKey } from '@/lib/utils';
 import { DAY_NAMES } from '@/lib/constants';
 import type { Activity, ActivityType, Goal } from '@/types';
@@ -23,6 +23,91 @@ interface GoalWithProgress extends Goal {
   activityType: ActivityType;
 }
 
+function GoalsReviewModal({
+  goals,
+  onDone,
+}: {
+  goals: GoalWithProgress[];
+  onDone: (removedIds: string[]) => void;
+}) {
+  const [toRemove, setToRemove] = useState<Set<string>>(new Set());
+
+  const toggle = (id: string) =>
+    setToRemove((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+
+  return (
+    <div className="fixed inset-0 z-[80] flex items-end justify-center bg-black/50 backdrop-blur-sm">
+      <div className="w-full max-w-lg bg-white rounded-t-3xl shadow-2xl px-5 pt-5 pb-8 space-y-4">
+        {/* Handle */}
+        <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-1" />
+
+        <div className="text-center">
+          <p className="text-2xl mb-1">🎯</p>
+          <p className="text-base font-bold text-gray-800">סיכום מטרות שבועיות</p>
+          <p className="text-xs text-gray-400 mt-0.5">סמן מטרות שתרצה להסיר לשבוע הבא</p>
+        </div>
+
+        <div className="space-y-3">
+          {goals.map((g) => {
+            const done = g.current >= g.targetCount;
+            const removing = toRemove.has(g.id);
+            return (
+              <div
+                key={g.id}
+                className={`flex items-center gap-3 p-3 rounded-2xl border-2 transition-all ${
+                  removing
+                    ? 'border-red-200 bg-red-50 opacity-60'
+                    : done
+                    ? 'border-green-200 bg-green-50'
+                    : 'border-gray-100 bg-gray-50'
+                }`}
+              >
+                <span
+                  className="w-10 h-10 rounded-xl flex items-center justify-center text-xl shrink-0"
+                  style={{ backgroundColor: `${g.activityType.color}20` }}
+                >
+                  {g.activityType.icon}
+                </span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-gray-800 truncate">{g.activityType.name}</p>
+                  <p className={`text-xs font-medium mt-0.5 ${done ? 'text-green-600' : 'text-red-400'}`}>
+                    {done ? `✅ הושג! ${g.current}/${g.targetCount}` : `❌ לא הושג ${g.current}/${g.targetCount}`}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => toggle(g.id)}
+                  className={`text-xs font-semibold px-3 py-1.5 rounded-full border transition-all ${
+                    removing
+                      ? 'bg-red-100 border-red-300 text-red-600'
+                      : 'bg-white border-gray-200 text-gray-500 hover:border-red-200 hover:text-red-500'
+                  }`}
+                >
+                  {removing ? 'מסיר ✓' : 'הסר'}
+                </button>
+              </div>
+            );
+          })}
+        </div>
+
+        <button
+          type="button"
+          onClick={() => onDone([...toRemove])}
+          className="w-full py-3 rounded-2xl bg-green-500 text-white text-sm font-bold shadow-sm"
+        >
+          {toRemove.size > 0
+            ? `המשך לשבוע הבא (הסר ${toRemove.size})`
+            : 'המשך לשבוע הבא ✓'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function shouldShowSleepBanner(sleepHours: number | undefined): boolean {
   if (typeof window === 'undefined') return false;
   if (localStorage.getItem('sleepReminderEnabled') !== 'true') return false;
@@ -30,6 +115,16 @@ function shouldShowSleepBanner(sleepHours: number | undefined): boolean {
   if (sleepHours !== undefined) return false;
   const dismissed = localStorage.getItem('sleepReminderDismissed');
   if (dismissed === getTodayKey()) return false;
+  return true;
+}
+
+function shouldShowGoalsReview(weekId: string): boolean {
+  if (typeof window === 'undefined') return false;
+  const now = new Date();
+  if (now.getDay() !== 6) return false; // only Saturday
+  if (now.getHours() < 19) return false; // only after 19:00
+  const reviewed = localStorage.getItem('goalsReviewed');
+  if (reviewed === weekId) return false; // already reviewed this week
   return true;
 }
 
@@ -41,6 +136,7 @@ export default function HomePage() {
   const [weekStats, setWeekStats] = useState({ total: 0, training: 0, recovery: 0 });
   const [goalsWithProgress, setGoalsWithProgress] = useState<GoalWithProgress[]>([]);
   const [showSleepBanner, setShowSleepBanner] = useState(false);
+  const [showGoalsReview, setShowGoalsReview] = useState(false);
 
   const loadData = () => {
     const weekId = getCurrentWeekId();
@@ -72,6 +168,7 @@ export default function HomePage() {
       return [{ ...g, current, activityType: actType }];
     });
     setGoalsWithProgress(withProgress);
+    setShowGoalsReview(shouldShowGoalsReview(weekId));
   };
 
   useEffect(() => { loadData(); }, []);
@@ -84,8 +181,20 @@ export default function HomePage() {
     setShowSleepBanner(false);
   };
 
+  const handleGoalsReviewDone = (removedIds: string[]) => {
+    removedIds.forEach(deleteGoal);
+    localStorage.setItem('goalsReviewed', getCurrentWeekId());
+    setShowGoalsReview(false);
+    loadData();
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Weekly goals review modal */}
+      {showGoalsReview && goalsWithProgress.length > 0 && (
+        <GoalsReviewModal goals={goalsWithProgress} onDone={handleGoalsReviewDone} />
+      )}
+
       {/* Sleep reminder banner */}
       {showSleepBanner && (
         <Link
