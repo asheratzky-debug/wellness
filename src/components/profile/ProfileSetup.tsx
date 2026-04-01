@@ -63,6 +63,11 @@ export default function ProfileSetup({ existing, onDone }: Props) {
   const handlePhoto = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (file.size > 2_000_000) {
+      alert('התמונה גדולה מדי. נא לבחור תמונה עד 2MB.');
+      e.target.value = '';
+      return;
+    }
     const reader = new FileReader();
     reader.onload = () => {
       const result = reader.result as string;

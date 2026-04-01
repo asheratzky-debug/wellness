@@ -21,9 +21,12 @@ const LOAD_LABEL: Record<string, string> = {
 };
 
 function hexToRgba(hex: string, alpha: number): string {
-  const r = parseInt(hex.slice(1, 3), 16);
-  const g = parseInt(hex.slice(3, 5), 16);
-  const b = parseInt(hex.slice(5, 7), 16);
+  // Expand 3-digit hex to 6-digit
+  const full = hex.replace(/^#([0-9a-f])([0-9a-f])([0-9a-f])$/i, '#$1$1$2$2$3$3');
+  const r = parseInt(full.slice(1, 3), 16);
+  const g = parseInt(full.slice(3, 5), 16);
+  const b = parseInt(full.slice(5, 7), 16);
+  if (isNaN(r) || isNaN(g) || isNaN(b)) return `rgba(0,0,0,${alpha})`;
   return `rgba(${r},${g},${b},${alpha})`;
 }
 
@@ -48,6 +51,7 @@ function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: numbe
 }
 
 export async function renderWeekToBlob(input: RenderInput): Promise<Blob> {
+  try {
   const { activities, activityTypes, weekData, userName, avatarUrl } = input;
   const typeMap = new Map(activityTypes.map((t) => [t.id, t]));
 
@@ -65,7 +69,7 @@ export async function renderWeekToBlob(input: RenderInput): Promise<Blob> {
   const maxActs = Math.max(1, ...Array.from({ length: 7 }, (_, i) =>
     activities.filter((a) => a.dayOfWeek === i).length,
   ));
-  const GRID_H  = DAY_H + ACT_PAD + maxActs * ACT_H + ACT_PAD;
+  const GRID_H  = DAY_H + ACT_PAD + Math.max(maxActs, 3) * ACT_H + ACT_PAD;
   const H       = PAD + HDR_H + 20 + GRID_H + 20 + 32 + PAD; // footer 32px
 
   const canvas  = document.createElement('canvas');
@@ -267,4 +271,7 @@ export async function renderWeekToBlob(input: RenderInput): Promise<Blob> {
   return new Promise((resolve, reject) =>
     canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('toBlob failed'))), 'image/png'),
   );
+  } catch (err) {
+    return Promise.reject(err);
+  }
 }

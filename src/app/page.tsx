@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { getActivities, getActivityTypes, getHealthData, getGoals, deleteGoal, getProfile, saveProfile, getAvatar } from '@/lib/storage';
+import { getActivities, getActivityTypes, getHealthData, getGoals, deleteGoal, getProfile, getAvatar } from '@/lib/storage';
 import { getCurrentWeekId, getTodayKey } from '@/lib/utils';
 import { DAY_NAMES } from '@/lib/constants';
 import type { Activity, ActivityType, Goal, UserProfile } from '@/types';
@@ -142,7 +142,7 @@ export default function HomePage() {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [showProfileSetup, setShowProfileSetup] = useState(false);
 
-  const loadData = () => {
+  const loadData = useCallback(() => {
     const weekId = getCurrentWeekId();
     const todayKey = getTodayKey();
     const today = new Date().getDay();
@@ -178,9 +178,9 @@ export default function HomePage() {
     setProfile(p);
     setAvatarUrl(getAvatar());
     setShowProfileSetup(!p);
-  };
+  }, []);
 
-  useEffect(() => { loadData(); }, []);
+  useEffect(() => { loadData(); }, [loadData]);
 
   const todayName = DAY_NAMES[new Date().getDay()];
   const dailyCard = getTodayCard();
@@ -256,7 +256,7 @@ export default function HomePage() {
               <img src={avatarUrl} alt="avatar" className="w-full h-full object-cover" />
             ) : (
               <span className="flex items-center justify-center w-full h-full bg-white/20 text-white font-bold text-sm">
-                {profile ? `${profile.firstName[0]}${profile.lastName[0]}` : '👤'}
+                {profile ? `${profile.firstName[0] ?? ''}${profile.lastName[0] ?? ''}` : '👤'}
               </span>
             )}
           </button>

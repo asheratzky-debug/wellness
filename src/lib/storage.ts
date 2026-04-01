@@ -314,6 +314,7 @@ export function exportAllData(): string {
 
 export function importAllData(json: string): boolean {
   if (!isStorageAvailable()) return false;
+  if (json.length > 5_000_000) return false; // 5MB hard limit
   try {
     const data = JSON.parse(json) as Record<string, unknown>;
 

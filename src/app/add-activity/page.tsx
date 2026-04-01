@@ -13,8 +13,12 @@ function AddActivityForm() {
   const router = useRouter();
   const params = useSearchParams();
 
-  const weekId = params.get('weekId') ?? getCurrentWeekId();
-  const defaultDay = parseInt(params.get('day') ?? String(new Date().getDay()), 10);
+  const rawWeekId = params.get('weekId') ?? '';
+  const weekId = /^\d{4}-\d{2}-\d{2}$/.test(rawWeekId) ? rawWeekId : getCurrentWeekId();
+  const parsedDay = parseInt(params.get('day') ?? '', 10);
+  const defaultDay = Number.isInteger(parsedDay) && parsedDay >= 0 && parsedDay <= 6
+    ? parsedDay
+    : new Date().getDay();
 
   const [activityTypes, setActivityTypes] = useState<ActivityType[]>([]);
   const [dayOfWeek, setDayOfWeek] = useState(defaultDay);

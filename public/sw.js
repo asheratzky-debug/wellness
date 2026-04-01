@@ -5,7 +5,11 @@ self.addEventListener('activate', (e) => e.waitUntil(self.clients.claim()));
 
 self.addEventListener('message', (event) => {
   if (event.data?.type === 'SCHEDULE_SLEEP_REMINDER') {
-    scheduleDailyReminder(event.data.hour ?? 9, event.data.minute ?? 0);
+    const hour = Number.isInteger(event.data.hour) && event.data.hour >= 0 && event.data.hour <= 23
+      ? event.data.hour : 9;
+    const minute = Number.isInteger(event.data.minute) && event.data.minute >= 0 && event.data.minute <= 59
+      ? event.data.minute : 0;
+    scheduleDailyReminder(hour, minute);
   }
 });
 
