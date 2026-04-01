@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { getActivities, getActivityTypes, getHealthData, getGoals, deleteGoal, getProfile, saveProfile } from '@/lib/storage';
+import { getActivities, getActivityTypes, getHealthData, getGoals, deleteGoal, getProfile, saveProfile, getAvatar } from '@/lib/storage';
 import { getCurrentWeekId, getTodayKey } from '@/lib/utils';
 import { DAY_NAMES } from '@/lib/constants';
 import type { Activity, ActivityType, Goal, UserProfile } from '@/types';
@@ -139,6 +139,7 @@ export default function HomePage() {
   const [showSleepBanner, setShowSleepBanner] = useState(false);
   const [showGoalsReview, setShowGoalsReview] = useState(false);
   const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [showProfileSetup, setShowProfileSetup] = useState(false);
 
   const loadData = () => {
@@ -175,6 +176,7 @@ export default function HomePage() {
 
     const p = getProfile();
     setProfile(p);
+    setAvatarUrl(getAvatar());
     setShowProfileSetup(!p);
   };
 
@@ -183,7 +185,7 @@ export default function HomePage() {
   const todayName = DAY_NAMES[new Date().getDay()];
   const dailyCard = getTodayCard();
   const greeting = profile
-    ? `${getGreeting()}, ${profile.firstName} ${profile.lastName} 👋`
+    ? `${getGreeting()}, ${profile.firstName} 👋`
     : `${getGreeting()} 👋`;
 
   const dismissSleepBanner = () => {
@@ -204,7 +206,7 @@ export default function HomePage() {
       {showProfileSetup && (
         <ProfileSetup
           existing={profile}
-          onDone={(p) => { setProfile(p); setShowProfileSetup(false); }}
+          onDone={(p, av) => { setProfile(p); setAvatarUrl(av); setShowProfileSetup(false); }}
         />
       )}
 
@@ -247,10 +249,16 @@ export default function HomePage() {
           <button
             type="button"
             onClick={() => setShowProfileSetup(true)}
-            className="w-9 h-9 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-white text-base transition-colors mt-1"
+            className="w-11 h-11 rounded-full overflow-hidden border-2 border-white/40 hover:border-white/70 shadow-md transition-all mt-0.5 shrink-0"
             aria-label="עריכת פרופיל"
           >
-            👤
+            {avatarUrl ? (
+              <img src={avatarUrl} alt="avatar" className="w-full h-full object-cover" />
+            ) : (
+              <span className="flex items-center justify-center w-full h-full bg-white/20 text-white font-bold text-sm">
+                {profile ? `${profile.firstName[0]}${profile.lastName[0]}` : '👤'}
+              </span>
+            )}
           </button>
         </div>
       </div>

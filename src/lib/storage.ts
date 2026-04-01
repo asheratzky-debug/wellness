@@ -8,6 +8,7 @@ const KEYS = {
   weeks: 'wellness-weeks',
   goals: 'wellness-goals',
   profile: 'wellness-profile',
+  avatar: 'wellness-avatar',
 } as const;
 
 function isStorageAvailable(): boolean {
@@ -281,6 +282,21 @@ export function getProfile(): UserProfile | null {
 
 export function saveProfile(profile: UserProfile): void {
   write(KEYS.profile, profile);
+}
+
+export function getAvatar(): string | null {
+  if (!isStorageAvailable()) return null;
+  return localStorage.getItem(KEYS.avatar);
+}
+
+export function saveAvatar(base64: string): void {
+  if (!isStorageAvailable()) return;
+  try { localStorage.setItem(KEYS.avatar, base64); } catch { /* storage full */ }
+}
+
+export function deleteAvatar(): void {
+  if (!isStorageAvailable()) return;
+  localStorage.removeItem(KEYS.avatar);
 }
 
 // ─── Import / Export ──────────────────────────────────────────────────────────
