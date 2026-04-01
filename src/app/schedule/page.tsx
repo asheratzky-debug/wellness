@@ -109,6 +109,7 @@ export default function SchedulePage() {
     if (!el || sharing) return;
     setSharing(true);
     try {
+      await document.fonts.ready;
       const html2canvas = (await import('html2canvas')).default;
       const canvas = await html2canvas(el, {
         scale: 2,
