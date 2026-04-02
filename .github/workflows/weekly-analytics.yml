@@ -37,6 +37,9 @@ jobs:
             const base = `https://vercel.com/api/web/insights`;
             const qs   = `projectId=${projectId}&teamId=${teamId}&from=${from}&to=${now}&filter=%7B%7D&tz=${tz}`;
 
+            // Debug: print URL without token
+            console.log('Stats URL:', `${base}/stats?${qs}`);
+
             const headers = {
               Authorization: `Bearer ${token}`,
               'Content-Type': 'application/json',
@@ -44,11 +47,13 @@ jobs:
 
             async function vFetch(url) {
               const res = await fetch(url, { headers });
+              const text = await res.text();
               if (!res.ok) {
-                const text = await res.text();
+                console.log('Failed URL:', url.replace(token, '***'));
+                console.log('Response body:', text);
                 throw new Error(`Vercel API ${res.status}: ${text}`);
               }
-              return res.json();
+              return JSON.parse(text);
             }
 
             // ── Fetch all data in parallel ────────────────────────────────
