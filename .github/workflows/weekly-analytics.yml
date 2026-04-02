@@ -1,0 +1,177 @@
+name: 📊 Weekly Analytics Report
+
+on:
+  schedule:
+    # Every Monday at 08:00 Israel time (UTC+3 in summer → 05:00 UTC)
+    - cron: '0 5 * * 1'
+  workflow_dispatch: # Allow manual trigger anytime
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+
+    steps:
+      - name: Generate & post weekly report
+        uses: actions/github-script@v7
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        with:
+          script: |
+            const token     = process.env.VERCEL_TOKEN;
+            const projectId = process.env.VERCEL_PROJECT_ID;
+
+            if (!token || !projectId) {
+              core.setFailed('Missing VERCEL_TOKEN or VERCEL_PROJECT_ID secrets');
+              return;
+            }
+
+            // ── Date range: last 7 days ───────────────────────────────────
+            const now  = Date.now();
+            const from = now - 7 * 24 * 60 * 60 * 1000;
+            const tz   = 'Asia/Jerusalem';
+            const base = `https://vercel.com/api/web/insights`;
+            const qs   = `projectId=${projectId}&from=${from}&to=${now}&filter=%7B%7D&tz=${tz}`;
+
+            const headers = {
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            };
+
+            async function vFetch(url) {
+              const res = await fetch(url, { headers });
+              if (!res.ok) {
+                const text = await res.text();
+                throw new Error(`Vercel API ${res.status}: ${text}`);
+              }
+              return res.json();
+            }
+
+            // ── Fetch all data in parallel ────────────────────────────────
+            const [stats, pages, devices, browsers, countries] = await Promise.all([
+              vFetch(`${base}/stats?${qs}`),
+              vFetch(`${base}/breakdown?${qs}&key=path&limit=8`),
+              vFetch(`${base}/breakdown?${qs}&key=os&limit=5`),
+              vFetch(`${base}/breakdown?${qs}&key=browser&limit=5`),
+              vFetch(`${base}/breakdown?${qs}&key=country&limit=5`),
+            ]);
+
+            // ── Helpers ───────────────────────────────────────────────────
+            const num  = (n) => (n ?? 0).toLocaleString('he-IL');
+            const pct  = (n, t) => t > 0 ? `${Math.round((n / t) * 100)}%` : '—';
+            const bar  = (n, max) => {
+              const filled = Math.round((n / Math.max(max, 1)) * 8);
+              return '█'.repeat(filled) + '░'.repeat(8 - filled);
+            };
+
+            const PAGE_NAMES = {
+              '/':              '🏠 בית',
+              '/schedule':      '📅 לוח שבועי',
+              '/add-activity':  '➕ הוספת פעילות',
+              '/health':        '😴 שינה',
+              '/insights':      '🧠 תובנות',
+              '/summary':       '📊 סיכום',
+              '/settings':      '⚙️ הגדרות',
+            };
+
+            const totalVisitors  = stats.totalVisitors  ?? stats.visitors  ?? 0;
+            const totalPageviews = stats.totalPageviews ?? stats.pageviews ?? 0;
+            const bounceRate     = stats.bounceRate ?? null;
+            const avgDuration    = stats.avgDuration ?? null;
+
+            // ── Date labels ───────────────────────────────────────────────
+            const fromDate = new Date(from).toLocaleDateString('he-IL', { day: 'numeric', month: 'numeric' });
+            const toDate   = new Date(now).toLocaleDateString('he-IL',  { day: 'numeric', month: 'numeric' });
+
+            // ── Build markdown report ─────────────────────────────────────
+            let md = `# 📊 דוח שבועי — Wellness App\n`;
+            md += `**תקופה:** ${fromDate} – ${toDate}\n\n`;
+            md += `---\n\n`;
+
+            // Summary box
+            md += `## 🔢 סיכום כללי\n\n`;
+            md += `| מדד | ערך |\n|-----|-----|\n`;
+            md += `| 👥 מבקרים ייחודיים | **${num(totalVisitors)}** |\n`;
+            md += `| 📄 צפיות עמוד | **${num(totalPageviews)}** |\n`;
+            if (bounceRate != null)
+              md += `| 🚪 Bounce rate | **${Math.round(bounceRate)}%** |\n`;
+            if (avgDuration != null)
+              md += `| ⏱️ זמן ממוצע בעמוד | **${Math.round(avgDuration)}s** |\n`;
+            md += `\n`;
+
+            // Top pages
+            if (pages?.data?.length) {
+              md += `## 📑 עמודים הכי פופולריים\n\n`;
+              md += `| עמוד | צפיות | פעילות |\n|------|-------|--------|\n`;
+              const maxV = pages.data[0]?.count ?? 1;
+              for (const p of pages.data) {
+                const name = PAGE_NAMES[p.key] ?? p.key;
+                md += `| ${name} | ${num(p.count)} | \`${bar(p.count, maxV)}\` |\n`;
+              }
+              md += `\n`;
+            }
+
+            // Devices
+            if (devices?.data?.length) {
+              md += `## 📱 מכשירים\n\n`;
+              md += `| מערכת | מבקרים | % |\n|-------|--------|---|\n`;
+              for (const d of devices.data) {
+                md += `| ${d.key || 'אחר'} | ${num(d.count)} | ${pct(d.count, totalVisitors)} |\n`;
+              }
+              md += `\n`;
+            }
+
+            // Browsers
+            if (browsers?.data?.length) {
+              md += `## 🌐 דפדפנים\n\n`;
+              md += `| דפדפן | מבקרים | % |\n|-------|--------|---|\n`;
+              for (const b of browsers.data) {
+                md += `| ${b.key || 'אחר'} | ${num(b.count)} | ${pct(b.count, totalVisitors)} |\n`;
+              }
+              md += `\n`;
+            }
+
+            // Countries
+            if (countries?.data?.length) {
+              md += `## 🌍 מדינות\n\n`;
+              md += `| מדינה | מבקרים | % |\n|-------|--------|---|\n`;
+              for (const c of countries.data) {
+                md += `| ${c.key || 'לא ידוע'} | ${num(c.count)} | ${pct(c.count, totalVisitors)} |\n`;
+              }
+              md += `\n`;
+            }
+
+            md += `---\n`;
+            md += `*נוצר אוטומטית ע"י GitHub Actions · [פתח ב-Vercel Analytics](https://vercel.com)*\n`;
+
+            // ── Create GitHub Issue ───────────────────────────────────────
+            const title = `📊 דוח שבועי – ${toDate}`;
+
+            // Close previous weekly report issues to keep things clean
+            const existing = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo:  context.repo.repo,
+              labels: ['analytics'],
+              state:  'open',
+            });
+            for (const issue of existing.data) {
+              await github.rest.issues.update({
+                owner:        context.repo.owner,
+                repo:         context.repo.repo,
+                issue_number: issue.number,
+                state:        'closed',
+              });
+            }
+
+            // Create new issue
+            const created = await github.rest.issues.create({
+              owner:  context.repo.owner,
+              repo:   context.repo.repo,
+              title,
+              body:   md,
+              labels: ['analytics'],
+            });
+
+            console.log(`Report created: ${created.data.html_url}`);
