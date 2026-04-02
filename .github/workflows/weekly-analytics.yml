@@ -18,13 +18,15 @@ jobs:
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          VERCEL_TEAM_ID: ${{ secrets.VERCEL_TEAM_ID }}
         with:
           script: |
             const token     = process.env.VERCEL_TOKEN;
             const projectId = process.env.VERCEL_PROJECT_ID;
+            const teamId    = process.env.VERCEL_TEAM_ID;
 
-            if (!token || !projectId) {
-              core.setFailed('Missing VERCEL_TOKEN or VERCEL_PROJECT_ID secrets');
+            if (!token || !projectId || !teamId) {
+              core.setFailed('Missing VERCEL_TOKEN, VERCEL_PROJECT_ID, or VERCEL_TEAM_ID secrets');
               return;
             }
 
@@ -33,7 +35,7 @@ jobs:
             const from = now - 7 * 24 * 60 * 60 * 1000;
             const tz   = 'Asia/Jerusalem';
             const base = `https://vercel.com/api/web/insights`;
-            const qs   = `projectId=${projectId}&from=${from}&to=${now}&filter=%7B%7D&tz=${tz}`;
+            const qs   = `projectId=${projectId}&teamId=${teamId}&from=${from}&to=${now}&filter=%7B%7D&tz=${tz}`;
 
             const headers = {
               Authorization: `Bearer ${token}`,
