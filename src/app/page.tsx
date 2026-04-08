@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { getActivities, getActivityTypes, getHealthData, getGoals, deleteGoal, getProfile, getAvatar } from '@/lib/storage';
-import { getCurrentWeekId, getTodayKey } from '@/lib/utils';
+import { getCurrentWeekId, getTodayKey, getAdjacentWeekId } from '@/lib/utils';
 import { DAY_NAMES } from '@/lib/constants';
 import type { Activity, ActivityType, Goal, UserProfile } from '@/types';
 import GoalsSection from '@/components/goals/GoalsSection';
@@ -119,14 +119,25 @@ function shouldShowSleepBanner(sleepHours: number | undefined): boolean {
   return true;
 }
 
-function shouldShowGoalsReview(weekId: string): boolean {
-  if (typeof window === 'undefined') return false;
+function getGoalsReviewWeekId(): string | null {
+  if (typeof window === 'undefined') return null;
   const now = new Date();
-  if (now.getDay() !== 6) return false; // only Saturday
-  if (now.getHours() < 19) return false; // only after 19:00
+  const day = now.getDay();
+
+  let reviewWeekId: string;
+  if (day === 6) {
+    // שבת (כל היום) — סכם שבוע זה
+    reviewWeekId = getCurrentWeekId();
+  } else if (day === 0) {
+    // ראשון — סכם שבוע שעבר אם לא סוכם
+    reviewWeekId = getAdjacentWeekId(getCurrentWeekId(), -1);
+  } else {
+    return null;
+  }
+
   const reviewed = localStorage.getItem('goalsReviewed');
-  if (reviewed === weekId) return false; // already reviewed this week
-  return true;
+  if (reviewed === reviewWeekId) return null;
+  return reviewWeekId;
 }
 
 export default function HomePage() {
@@ -138,6 +149,8 @@ export default function HomePage() {
   const [goalsWithProgress, setGoalsWithProgress] = useState<GoalWithProgress[]>([]);
   const [showSleepBanner, setShowSleepBanner] = useState(false);
   const [showGoalsReview, setShowGoalsReview] = useState(false);
+  const [reviewWeekId, setReviewWeekId] = useState<string | null>(null);
+  const [reviewGoals, setReviewGoals] = useState<GoalWithProgress[]>([]);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [showProfileSetup, setShowProfileSetup] = useState(false);
@@ -172,7 +185,22 @@ export default function HomePage() {
       return [{ ...g, current, activityType: actType }];
     });
     setGoalsWithProgress(withProgress);
-    setShowGoalsReview(shouldShowGoalsReview(weekId));
+
+    const rwid = getGoalsReviewWeekId();
+    setReviewWeekId(rwid);
+    if (rwid) {
+      const reviewActivities = getActivities(rwid);
+      const reviewProgress: GoalWithProgress[] = goals.flatMap((g) => {
+        const actType = typeMap.get(g.typeId);
+        if (!actType) return [];
+        const current = reviewActivities.filter((a) => a.typeId === g.typeId && a.status !== 'cancelled').length;
+        return [{ ...g, current, activityType: actType }];
+      });
+      setReviewGoals(reviewProgress);
+      setShowGoalsReview(reviewProgress.length > 0);
+    } else {
+      setShowGoalsReview(false);
+    }
 
     const p = getProfile();
     setProfile(p);
@@ -195,7 +223,7 @@ export default function HomePage() {
 
   const handleGoalsReviewDone = (removedIds: string[]) => {
     removedIds.forEach(deleteGoal);
-    localStorage.setItem('goalsReviewed', getCurrentWeekId());
+    if (reviewWeekId) localStorage.setItem('goalsReviewed', reviewWeekId);
     setShowGoalsReview(false);
     loadData();
   };
@@ -211,8 +239,8 @@ export default function HomePage() {
       )}
 
       {/* Weekly goals review modal */}
-      {showGoalsReview && goalsWithProgress.length > 0 && (
-        <GoalsReviewModal goals={goalsWithProgress} onDone={handleGoalsReviewDone} />
+      {showGoalsReview && reviewGoals.length > 0 && (
+        <GoalsReviewModal goals={reviewGoals} onDone={handleGoalsReviewDone} />
       )}
 
       {/* Sleep reminder banner */}

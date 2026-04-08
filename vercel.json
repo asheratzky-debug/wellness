@@ -1,0 +1,14 @@
+{
+  "crons": [
+    {
+      "path": "/api/notify",
+      "method": "GET",
+      "schedule": "0 16 * * 6"
+    },
+    {
+      "path": "/api/notify-sleep",
+      "method": "GET",
+      "schedule": "0 * * * *"
+    }
+  ]
+}

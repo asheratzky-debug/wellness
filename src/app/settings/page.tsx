@@ -9,6 +9,7 @@ import {
   importAllData,
   generateId,
 } from '@/lib/storage';
+import { subscribeToPushNotifications, isPushSubscribed } from '@/lib/notifications';
 import { DEFAULT_ACTIVITY_TYPES } from '@/lib/constants';
 import type { ActivityType } from '@/types';
 
@@ -38,11 +39,24 @@ export default function SettingsPage() {
   const [isNew, setIsNew] = useState(false);
   const [exportStatus, setExportStatus] = useState('');
   const [importStatus, setImportStatus] = useState('');
+  const [pushStatus, setPushStatus] = useState<'idle' | 'loading' | 'done' | 'denied'>('idle');
+  const [pushEnabled, setPushEnabled] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const reload = () => setTypes(getActivityTypes());
 
-  useEffect(() => { reload(); }, []);
+  useEffect(() => {
+    reload();
+    setPushEnabled(isPushSubscribed());
+  }, []);
+
+  const handleEnablePush = async () => {
+    setPushStatus('loading');
+    const ok = await subscribeToPushNotifications();
+    setPushStatus(ok ? 'done' : 'denied');
+    setPushEnabled(ok);
+    setTimeout(() => setPushStatus('idle'), 3000);
+  };
 
   const openNew = () => {
     setEditing({ id: generateId(), name: '', icon: '🏃', color: '#22c55e', category: 'training' });
@@ -294,6 +308,33 @@ export default function SettingsPage() {
               </button>
               <input ref={fileInputRef} type="file" accept=".json" onChange={handleImport} className="hidden" />
             </div>
+          </div>
+        </div>
+
+        {/* Push notifications */}
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="px-4 py-3 border-b border-gray-100">
+            <h2 className="text-sm font-semibold text-gray-700">התראות</h2>
+          </div>
+          <div className="px-4 py-4 flex items-center justify-between gap-4">
+            <div>
+              <p className="text-sm font-medium text-gray-800">סיכום מטרות שבועי</p>
+              <p className="text-xs text-gray-400">התראת push במוצ&quot;ש ב-19:00</p>
+            </div>
+            {pushEnabled ? (
+              <span className="text-xs font-semibold text-green-600 bg-green-50 px-3 py-1.5 rounded-lg">
+                ✓ פעיל
+              </span>
+            ) : (
+              <button
+                type="button"
+                onClick={handleEnablePush}
+                disabled={pushStatus === 'loading'}
+                className="text-sm font-medium text-green-600 bg-green-50 hover:bg-green-100 disabled:opacity-50 px-3 py-1.5 rounded-lg transition-colors"
+              >
+                {pushStatus === 'loading' ? '...' : pushStatus === 'done' ? '✓ הופעל' : pushStatus === 'denied' ? 'נחסם' : 'הפעל'}
+              </button>
+            )}
           </div>
         </div>
 
