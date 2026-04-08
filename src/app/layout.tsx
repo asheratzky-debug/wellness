@@ -3,6 +3,7 @@ import { Heebo } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/layout/Navbar";
 import ErrorBoundary from "@/components/ErrorBoundary";
+import SWUpdater from "@/components/SWUpdater";
 import { Analytics } from "@vercel/analytics/next";
 
 const heebo = Heebo({
@@ -48,6 +49,7 @@ export default function RootLayout({
         className={`${heebo.variable} font-sans min-h-screen bg-gray-50 antialiased`}
         style={{ fontFamily: "var(--font-heebo), sans-serif" }}
       >
+        <SWUpdater />
         <main className="pb-20" style={{ paddingTop: 'env(safe-area-inset-top)' }}><ErrorBoundary>{children}</ErrorBoundary></main>
         <Navbar />
         <Analytics />
