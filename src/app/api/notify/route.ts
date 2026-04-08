@@ -29,8 +29,8 @@ export async function GET(req: NextRequest) {
   }
 
   const payload = JSON.stringify({
-    title: '🎯 סיכום מטרות שבועיות',
-    body: 'השבוע הסתיים — בוא לראות איך הלך עם המטרות שלך',
+    title: 'אהלן אח יקר 👋',
+    body: 'סיים את השבוע ותכנן את השבוע הבא',
     url: '/summary',
   });
 
