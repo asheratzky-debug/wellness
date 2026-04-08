@@ -11,6 +11,16 @@ self.addEventListener('activate', (e) => {
   );
 });
 
+// ─── Network-first for HTML (forces fresh app on every open) ─────────────────
+
+self.addEventListener('fetch', (e) => {
+  if (e.request.mode === 'navigate') {
+    e.respondWith(
+      fetch(e.request, { cache: 'no-cache' }).catch(() => caches.match(e.request))
+    );
+  }
+});
+
 // ─── Push notifications (weekly goals summary) ────────────────────────────────
 
 self.addEventListener('push', (e) => {
