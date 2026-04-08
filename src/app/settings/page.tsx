@@ -338,7 +338,7 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        <p className="text-center text-xs text-gray-300 pb-2">Wellness v1.0</p>
+        <p className="text-center text-xs text-gray-300 pb-2">Wellness v2.0</p>
       </div>
     </div>
   );
