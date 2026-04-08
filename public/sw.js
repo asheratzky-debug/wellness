@@ -1,7 +1,15 @@
 // Wellness Service Worker
 
 self.addEventListener('install', () => self.skipWaiting());
-self.addEventListener('activate', (e) => e.waitUntil(self.clients.claim()));
+self.addEventListener('activate', (e) => {
+  e.waitUntil(
+    self.clients.claim().then(() =>
+      self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clients) =>
+        Promise.all(clients.map((client) => client.navigate(client.url)))
+      )
+    )
+  );
+});
 
 // ─── Push notifications (weekly goals summary) ────────────────────────────────
 
