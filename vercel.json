@@ -2,7 +2,6 @@
   "crons": [
     {
       "path": "/api/notify",
-      "method": "GET",
       "schedule": "0 16 * * 6"
     }
   ]
